@@ -11,34 +11,29 @@
 
 int UHD_SAFE_MAIN(int argc, char *argv[])
 {
-    std::string address("serial=30C524E");
+    std::string address("serial=30C5254");
     std::string subdev("A:A");
     std::string antenna("RX2");
     std::string ref("internal");
 
-    double sample_rate(8e6);
-    double frequency(2.48e9);
-    double gain(50);
+    std::vector<double> wifi_freqs = {2.412e9, 2.417e9, 2.422e9, 2.427e9, 2.432e9, 2.437e9, 2.442e9, 2.447e9, 2.452e9, 2.457e9, 2.462e9};
 
     USRP usrp = USRP(address)
-                .with_sample_rate(sample_rate)
-                .with_frequency(frequency)
-                .with_gain(gain)
-                .with_IF_filter_bandwidth(sample_rate)
-                .with_antenna(antenna);
+                    .with_frequency(wifi_freqs[0]);
 
-    usrp.print_summary();
+    // Stream for a number of samples and track the time taken
+    const auto start_time = std::chrono::steady_clock::now();
+    usrp.stream_for_number_of_samples(1000000, "output.txt");
+    const auto end_time = std::chrono::steady_clock::now();
 
-    usrp.stream_for_number_of_samples(100000, "output.txt");
+    const auto time_elapsed = end_time - start_time;
+    std::cout << "\nTime Elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(time_elapsed).count() << std::endl;
 
-    // // Lock mboard clocks
-    // std::cout << boost::format("Lock mboard clocks: %f") % ref << std::endl;
-    // usrp->set_clock_source(ref);
-
-    // // always select the subdevice first, the channel mapping affects the other settings
-    // std::cout << boost::format("subdev set to: %f") % subdev << std::endl;
-    // usrp->set_rx_subdev_spec(subdev);
-    // std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
+    std::cout << std::endl;
+    std::cout << usrp.usrp_internal->get_rx_bandwidth() << std::endl;
+    std::cout << usrp.usrp_internal->get_rx_antenna() << std::endl;
+    std::cout << usrp.usrp_internal->get_rx_gain() << std::endl;
+    std::cout << usrp.usrp_internal->get_rx_rate() << std::endl;
 
     return EXIT_SUCCESS;
 }
